@@ -53,7 +53,6 @@ public class Partitioning {
         Files.write(outputFile, list, Charset.forName("UTF-8"));
     }
 
-
     public static void main(String[] args) throws Exception {
         reOrganize();
     }

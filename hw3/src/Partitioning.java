@@ -9,6 +9,7 @@ import java.util.*;
 /**
  * Created by zero on 10/28/16.
  */
+
 public class Partitioning {
 
     private static void reOrganize() throws Exception{
@@ -35,8 +36,27 @@ public class Partitioning {
             }
             // add one line to corresponding
             for(int i=0; i<5; ++i) {
-                if(strArr[i].length()>0)
-                    lists.get(i).add(strArr[i]);
+                if(strArr[i].length()>0) {
+                    List<String> list = Arrays.asList(strArr[i].trim().split(" "));
+
+                    Collections.sort(list, new Comparator<String>() {
+                        @Override
+                        public int compare(String o1, String o2) {
+                            if (o1.length() > o2.length()) {
+                                return 1;
+                            } else if (o1.length() < o2.length()) {
+                                return -1;
+                            }
+                            return o1.compareTo(o2);
+                        }
+                    });
+
+                    String newStr = "";
+                    for(int j=0; j<list.size(); ++j){
+                        newStr += j==0 ? list.get(j) : " " + list.get(j);
+                    }
+                    lists.get(i).add(newStr);
+                }
             }
         }
         br.close();

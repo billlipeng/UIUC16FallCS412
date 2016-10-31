@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,25 +80,23 @@ public class MiningFP {
         }
 
         //Transfer as List and sort it
-        ArrayList<Map.Entry<String, Double>> l = new ArrayList(m.entrySet());
+        List<Map.Entry<String, Double>> l = new ArrayList(m.entrySet());
         Collections.sort(l, new Comparator<Map.Entry<String, Double>>(){
             public int compare(Map.Entry<String, Double> o1, Map.Entry<String, Double> o2) {
                 return o2.getValue().compareTo(o1.getValue());
             }});
 
-        List<String> outputList = new ArrayList<>();
-        for(int i=0; i<l.size(); ++i){
-            outputList.add(l.get(i).getKey());
-        }
-
         // save to file
-        writeFile(fileNum, outputList);
+        writeFile(fileNum, l);
     }
 
-    private static void writeFile(int fileNum, List<String> list) throws Exception{
+    private static void writeFile(int fileNum, List<Map.Entry<String, Double> > list) throws Exception{
         String fileName = "pattern-"+Integer.toString(fileNum)+".txt";
-        Path outputFile = Paths.get(fileName);
-        Files.write(outputFile, list, Charset.forName("UTF-8"));
+        PrintWriter writer = new PrintWriter(fileName, "UTF-8");
+        for(Map.Entry<String, Double> m : list) {
+            writer.println(m.getValue() + " " + m.getKey());
+        }
+        writer.close();
     }
 
     public static void main(String[] args) throws Exception {

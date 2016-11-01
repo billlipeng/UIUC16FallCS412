@@ -83,31 +83,31 @@ public class Main {
 
 
         /*Count the number of max patterns.*/
-//        Set<String> k = new HashSet<>();
-//
-//        for(String s : m.keySet()){
-//            k.add(s);
-//        }
-//
-//        for(String s : k){
-//            int len = s.length();
-//            for(int i=1; i<len; ++i){
-//                Permutation permutation = new Permutation();
-//                List<String> stringList = permutation.printCombination(s.toCharArray(),len, i);
-//                for(String subString : stringList){
-//                    if(keys.contains(subString)){
-//                        m.remove(subString);
-//                        System.out.println( "k size = " + k.size());
-//                    }
-//                }
-//
-//            }
-//
-//        }
-//        c = 0;
-//        for(String ss: m.keySet()){
-//            System.out.println(++c + "  "+ "  key = " + ss + " cnt = " + m.get(ss));
-//        }
+        Set<String> k = new HashSet<>();
+
+        for(String s : m.keySet()){
+            k.add(s);
+        }
+
+        for(String s : k){
+            int len = s.length();
+            for(int i=1; i<len; ++i){
+                Permutation permutation = new Permutation();
+                List<String> stringList = permutation.printCombination(s.toCharArray(),len, i);
+                for(String subString : stringList){
+                    if(keys.contains(subString)){
+                        m.remove(subString);
+                        System.out.println( "k size = " + k.size());
+                    }
+                }
+
+            }
+
+        }
+        c = 0;
+        for(String ss: m.keySet()){
+            System.out.println(++c + "  "+ "  key = " + ss + " cnt = " + m.get(ss));
+        }
 
 
     }

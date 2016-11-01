@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class MiningFP {
 
-    private static double MIN_SUP = 0.0003;
+    private static double MIN_SUP = 0.001;
     private static List<String> topicList = new ArrayList<>();
     private static Hashtable<String, Integer> patterns = new Hashtable<>();
 
@@ -40,6 +40,9 @@ public class MiningFP {
     }
 
     private static void readFile(int fileNum) throws Exception {
+        topicList.clear();
+        patterns.clear();
+
         BufferedReader br;
         br = new BufferedReader(new FileReader("topic-"+Integer.toString(fileNum)+".txt"));
         String line;
@@ -91,7 +94,7 @@ public class MiningFP {
     }
 
     private static void writeFile(int fileNum, List<Map.Entry<String, Double> > list) throws Exception{
-        String fileName = "pattern-"+Integer.toString(fileNum)+".txt";
+        String fileName = "./patterns/pattern-"+Integer.toString(fileNum)+".txt";
         PrintWriter writer = new PrintWriter(fileName, "UTF-8");
         for(Map.Entry<String, Double> m : list) {
             writer.println(m.getValue() + " " + m.getKey());
@@ -101,6 +104,7 @@ public class MiningFP {
 
     public static void main(String[] args) throws Exception {
         for(int i=0; i<5; ++i) {
+            System.out.println("Generating Frequent Pattern file " + i);
             miningFP(i);
         }
     }

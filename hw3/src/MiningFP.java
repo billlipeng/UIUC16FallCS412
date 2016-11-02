@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class MiningFP {
 
-    private static double MIN_SUP = 0.001;
+    private static double MIN_SUP = 0.01;
     private static List<String> topicList = new ArrayList<>();
     private static Hashtable<String, Integer> patterns = new Hashtable<>();
 

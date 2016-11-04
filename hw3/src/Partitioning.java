@@ -32,13 +32,12 @@ public class Partitioning {
             for(int i=1; i<l.length; ++i){
                 String[] str = l[i].split(":");
                 int n = Integer.valueOf(str[1]);
-                strArr[n] += strArr[n].length()<1 ? str[0] : " " + str[0];
+                strArr[n] += strArr[n].length()<1 ? str[0] : (" " + str[0]);
             }
-            // add one line to corresponding
+            // add one line to corresponding topic
             for(int i=0; i<5; ++i) {
                 if(strArr[i].length()>0) {
                     List<String> list = Arrays.asList(strArr[i].trim().split(" "));
-
                     Collections.sort(list, new Comparator<String>() {
                         @Override
                         public int compare(String o1, String o2) {
@@ -50,10 +49,9 @@ public class Partitioning {
                             return o1.compareTo(o2);
                         }
                     });
-
                     String newStr = "";
                     for(int j=0; j<list.size(); ++j){
-                        newStr += j==0 ? list.get(j) : " " + list.get(j);
+                        newStr += j==0 ? list.get(j) : (" " + list.get(j));
                     }
                     lists.get(i).add(newStr);
                 }
@@ -63,6 +61,7 @@ public class Partitioning {
 
         // save to file
         for(int i=0; i<5; ++i){
+            System.out.println("Generating Topic file " + i);
             output(i, lists.get(i));
         }
     }

@@ -45,7 +45,7 @@ public class MiningMaxCloP {
             }
             FPTable.put(tmp, Double.valueOf(str[0]));
         }
-        System.out.println("FP size " + FPTable.size());
+//        System.out.println("FP size " + FPTable.size());
         br.close();
     }
 

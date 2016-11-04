@@ -8,32 +8,9 @@ import java.util.*;
  */
 public class MiningPurityP {
 
-    private static List<Set<String> > topicList = new ArrayList<>();
+    private static List<Hashtable<String, Integer> > lists = new ArrayList<>();
 
     private static List<Hashtable<String, Double> > patternsList = new ArrayList<>();
-
-    private static void combinationUtil(String arr[], String data[], int start, int end, int index, int r, List<String> res) {
-        if (index == r) {
-            String a = "";
-            for (int j=0; j<r; j++){
-                a += (j==0) ? data[j] : " "+data[j];
-            }
-            res.add(a);
-            return;
-        }
-        for (int i=start; i<=end && end-i+1 >= r-index; i++) {
-            data[index] = arr[i];
-            combinationUtil(arr, data, i+1, end, index+1, r, res);
-        }
-    }
-
-    private static List<String> printCombination(String arr[], int n, int r) {
-        List<String> res = new ArrayList<>();
-        res.clear();
-        String data[]=new String[r];
-        combinationUtil(arr, data, 0, n-1, 0, r, res);
-        return res;
-    }
 
     private static void readFile(String fileName, Object o) throws Exception {
         BufferedReader br;
@@ -63,7 +40,55 @@ public class MiningPurityP {
         writer.close();
     }
 
+    private static void reOrganize() throws Exception{
+        BufferedReader br;
+        br = new BufferedReader(new FileReader("./result/word-assignments.dat"));
+        String line;
+        for(int i=0; i<5; ++i) {
+            Hashtable<String, Integer> table = new Hashtable<>();
+            lists.add(table);
+        }
 
+        int cnt = 0;
+        while ( (line = br.readLine()) != null) {
+            String[] l = line.trim().split(" ");
+
+            // one strArr for one topic of line of each title
+            String[] strArr = new String[5];
+            Arrays.fill(strArr,"");
+            for(int i=1; i<l.length; ++i){
+                String[] str = l[i].split(":");
+                int n = Integer.valueOf(str[1]);
+                strArr[n] += strArr[n].length()<1 ? str[0] : " " + str[0];
+            }
+            // add one line to corresponding
+            for(int i=0; i<5; ++i) {
+                if(strArr[i].length()>0) {
+                    List<String> list = Arrays.asList(strArr[i].trim().split(" "));
+
+                    Collections.sort(list, new Comparator<String>() {
+                        @Override
+                        public int compare(String o1, String o2) {
+                            if (o1.length() > o2.length()) {
+                                return 1;
+                            } else if (o1.length() < o2.length()) {
+                                return -1;
+                            }
+                            return o1.compareTo(o2);
+                        }
+                    });
+
+                    String newStr = "";
+                    for(int j=0; j<list.size(); ++j){
+                        newStr += j==0 ? list.get(j) : " " + list.get(j);
+                    }
+                    lists.get(i).put(newStr, cnt);
+                }
+            }
+            ++cnt;
+        }
+        br.close();
+    }
 
     private static void miningPurityP(int fileNum) throws Exception {
 
@@ -82,8 +107,6 @@ public class MiningPurityP {
             public int compare(Map.Entry<String, Double> o1, Map.Entry<String, Double> o2) {
                 return o2.getValue().compareTo(o1.getValue());
             }});
-
-        System.out.println("purity size " + l.size());
 
         // save to file
         String fileName = "./purity/purity-"+Integer.toString(fileNum)+".txt";
@@ -104,34 +127,26 @@ public class MiningPurityP {
         return true;
     }
 
-
     private static Double findMax(int fileNum, String s){
         Double max = Double.NEGATIVE_INFINITY;
         for(int i=0; i<5; ++i){
             Integer cnt0 = 0;
             Integer cnt1 = 0;
-            Set<String> unionSet = new HashSet<>();
+            Set<Integer> unionSet = new HashSet<>();
             if(i != fileNum) {
-                for(String tmp : topicList.get(i)) {
-                    unionSet.add(tmp);
+                for(String tmp : lists.get(i).keySet()) {
+                    unionSet.add(lists.get(i).get(tmp));
                     if (strContains(tmp, s)) {
                         ++cnt0;
                     }
                 }
-                if(cnt0 > 0) {
-                    for (String tmp : topicList.get(fileNum)) {
-                        unionSet.add(tmp);
-                        if (strContains(tmp, s)) {
-                            ++cnt1;
-                        }
+                for (String tmp : lists.get(fileNum).keySet()) {
+                    unionSet.add(lists.get(fileNum).get(tmp));
+                    if (strContains(tmp, s)) {
+                        ++cnt1;
                     }
-                    if(cnt0 == 1)
-                        System.out.println(max + " " + cnt0 + " " + cnt1 + " " + s);
-                    max = Math.max(max, ((double) (cnt0 + cnt1)) / (double) unionSet.size());
-                } else {
-                    max = Math.max(max, patternsList.get(fileNum).get(s));
-
                 }
+                max = Math.max(max, ((double) (cnt0 + cnt1)) / (double) unionSet.size());
             }
         }
         return max;
@@ -140,17 +155,12 @@ public class MiningPurityP {
     public static void main(String[] args) throws Exception {
 
         // Load data into memory
+        reOrganize();
+
         for(int i=0; i<5; ++i){
-            Set<String> set = new HashSet<>();
             Hashtable<String, Double> hashtable = new Hashtable<>();
-
-            String topicFile = "./topic-"+Integer.toString(i)+".txt";
             String patternFile = "./patterns/pattern-"+Integer.toString(i)+".txt";
-
-            readFile(topicFile, set);
             readFile(patternFile, hashtable);
-
-            topicList.add(set);
             patternsList.add(hashtable);
         }
 
@@ -160,4 +170,5 @@ public class MiningPurityP {
             miningPurityP(i);
         }
     }
+
 }

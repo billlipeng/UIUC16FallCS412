@@ -12,6 +12,7 @@ import java.util.*;
  * Created by zero on 10/28/16.
  */
 public class Preprocessing {
+
     private static List<String> readFile() throws Exception {
         BufferedReader br;
         List<String> res = new ArrayList<>();
@@ -40,11 +41,9 @@ public class Preprocessing {
         for(String line: file) {
             String[] separateLine = line.split("\t");
             if (separateLine.length > 1) {
-//                System.out.println(separateLine[0]);
                 String[] key = separateLine[1].split(" ");
                 for (int i = 0; i < key.length; ++i) {
                     keySet.add(key[i]);
-//                    System.out.println(key[i]);
                 }
             }
         }
@@ -61,11 +60,10 @@ public class Preprocessing {
         String line;
         Integer cnt = 0;
         while ( (line = br.readLine()) != null) {
-            keyTable.put(line.trim(), cnt++);
+            keyTable.put(line.trim(), cnt);
+            ++cnt;
         }
         br.close();
-
-//        System.out.println("size of hashtable = " + keyTable.size());
 
         // read title from paper.txt
         List<String> file = readFile();
@@ -78,7 +76,7 @@ public class Preprocessing {
                 String[] key = separateLine[1].split(" ");
                 Hashtable<String, Integer> m = new Hashtable<>();
                 for (String s : key) {
-                    if(!m.contains(s)) {
+                    if(!m.containsKey(s)) {
                         m.put(s, 1);
                     } else{
                         m.replace(s,m.get(s)+1);

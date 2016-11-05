@@ -8,8 +8,8 @@ import java.util.*;
  */
 public class CombinedRankingFunc {
 
-    private static double GAMMA = 0.2;
-    private static double OMEGA = 0.8;
+    private static double GAMMA = 0.5;
+    private static double OMEGA = 0.5;
 
 
     private static List<Hashtable<String, Double>> patternsList = new ArrayList<>();

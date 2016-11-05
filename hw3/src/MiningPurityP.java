@@ -35,7 +35,7 @@ public class MiningPurityP {
     private static void writeFile(String fileName, List<Map.Entry<String, Double> > list) throws Exception{
         PrintWriter writer = new PrintWriter(fileName, "UTF-8");
         for(Map.Entry<String, Double> m : list) {
-            writer.println(m.getValue() + " " + m.getKey());
+            writer.println(m.getKey());
         }
         writer.close();
     }
@@ -93,12 +93,21 @@ public class MiningPurityP {
     private static void miningPurityP(int fileNum) throws Exception {
 
         Hashtable<String, Double> purityTable = new Hashtable<>();
+        Hashtable<String, Double> tmpTable = new Hashtable<>();
         Hashtable<String, Double> patternsTable = patternsList.get(fileNum);
 
+        Double max = Double.NEGATIVE_INFINITY;
+        Double min = Double.POSITIVE_INFINITY;
         for(String s : patternsTable.keySet()){
             Double a = Math.log(patternsTable.get(s))/Math.log(2);
             Double b = Math.log(findMax(fileNum, s))/Math.log(2);
-            purityTable.put(s, a-b);
+            Double purity = a - b;
+            max = Math.max(max, purity);
+            min = Math.min(min, purity);
+            tmpTable.put(s, purity);
+        }
+        for(String s : tmpTable.keySet()){
+            purityTable.put(Double.toString(tmpTable.get(s))+" "+s, (tmpTable.get(s)-min)/(max - min) * patternsTable.get(s));
         }
 
         //Transfer as List and sort it

@@ -7,13 +7,22 @@ import java.util.*;
  */
 public class DT {
 
-    private List<Edge> decisionTree = new ArrayList<>();
-    private Integer root;
+    private Tree<Integer> decisionTree = new Tree<>();
+//    private List<Edge> decisionTree = new ArrayList<>();
+    private TreeSet<Integer> labelSet;
     private Integer maxDepth;
+    private Integer depth;
+
+
+
+    private Boolean forestRI;
+
+
 //    private Double reductionImpurity;
 
     // featureList is a list of feature that hasn't been assigned.
-    private Integer growTree(List<Instance> instanceList, List<Integer> featureList, Integer depth){
+    private void growTree(List<Instance> instanceList, List<Integer> featureList, Node<Integer> node){
+        this.depth = Math.max(this.depth, node.getDepth());
         Integer instanceNum = instanceList.size();
         Map<Integer, Integer> labelMap = findLabel(instanceList);
 //        Double gini = 1.0;
@@ -27,74 +36,100 @@ public class DT {
         for (Integer feature : featureList){
             Double featureGini = 0.0;
             Map<Integer, Integer> featureValueMap = countFeatureValue(instanceList, feature);
+//            System.out.println("FeatureMap = " + featureValueMap);
             Double product = 0.0;
             for(Integer featureValue : featureValueMap.keySet()){
                 product = 1.0;
+//                System.out.println(" featureValue = " + featureValue);
                 for(Integer label : labelMap.keySet()){
+//                    System.out.println(" label value = " + label);
+
                     Integer mr = 0;
                     for(Instance instance : instanceList){
                         if((instance.getLabel() == label) && (instance.getAttriMap().get(feature) == featureValue)){
                             ++mr;
                         }
                     }
+//                    System.out.println( "mr =  " + mr + " " + featureValueMap.get(featureValue));
+
                     product -= ((double) mr / (double) featureValueMap.get(featureValue) * (double) mr / (double) featureValueMap.get(featureValue));
-//                    System.out.println(product+" " + mr + " " + featureValueMap.get(featureValue));
+//                    if(product < 0.0)
+//                        System.out.println("after product  = "+product);
                 }
-                product = Math.abs(product);
-//                System.out.println(product + "  " + featureMap.get(m) + "  "+instanceNum);
+//                System.out.println(product + "  " + featureValueMap.get(featureValue) + "  "+instanceNum);
                 product *= (double) featureValueMap.get(featureValue) / (double) instanceNum;
 //                System.out.println("product =  " + product);
             }
             featureGini += product;
-            System.out.println( "feature gini = "+ featureGini);
+//            System.out.println( "feature gini = "+ featureGini);
             featureGiniList.add(featureGini);
         }
 
         // remove the feature from feature list
-        System.out.println(featureGiniList);
+//        System.out.println(featureGiniList);
         Double min = Collections.min(featureGiniList);
         int indexOfMin = featureGiniList.indexOf(min);
+//        System.out.println("index of min = " + indexOfMin);
         Integer selectedFeature = featureList.get(indexOfMin);
         List<Integer> newFeatureList = selectedFeature(indexOfMin, featureList);
 
         Map<Integer, Integer> selectedFeatureMap = countFeatureValue(instanceList, selectedFeature);
+        node.setData(selectedFeature);
 
-        // Add edge to the tree
+        // find the maximum number of value
+        Map.Entry<Integer, Integer> maxEntry = null;
+        for (Map.Entry<Integer, Integer> entry : selectedFeatureMap.entrySet()) {
+            if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
+                maxEntry = entry;
+        }
+        node.setMaxEdge(maxEntry.getKey());
 
         for(Integer value : selectedFeatureMap.keySet()){
-            System.out.println("featureList = " + featureList);
+//            System.out.println("featureList = " + featureList);
 
-            Edge edge = new Edge();
-            edge.setHead(selectedFeature);
-            edge.setEdge(value);
+            Integer[] pure = checkLabelPure(selectedFeature, value, instanceList);
 
-            List<Integer> pure = checkLabelPure(selectedFeature, value, instanceList);
-            System.out.println("feature = " + selectedFeature + " value = " + value +"  pure = " + pure.get(0)+ "  depth = " + depth);
-            if(pure.get(0) == 1) {
-                edge.setTail(null);
-                edge.setLabel(pure.get(1));
-            } else if (newFeatureList.size()==0){
-                edge.setTail(null);
-                edge.setLabel(getMajorityLabel(selectedFeature, value, instanceList));
+            if(pure[0] == 1) {
+                Node<Integer> childNode = new Node<>();
+                childNode.setDepth(node.getDepth()+1);
+                childNode.setLabel(pure[1]);
+                node.addChild(value, childNode);
+            } else if (newFeatureList.size()==0 || node.getDepth() >= this.getMaxDepth()){
+                Node<Integer> childNode = new Node<>();
+                childNode.setDepth(node.getDepth()+1);
+                childNode.setLabel(getMajorityLabel(selectedFeature, value, instanceList));
+                node.addChild(value, childNode);
             } else {
+                Node<Integer> childNode = new Node<>();
+                childNode.setDepth(node.getDepth()+1);
                 List<Instance> newInstanceList = selectInstance(selectedFeature, value, instanceList);
-                edge.setTail(growTree(newInstanceList, newFeatureList, depth+1));
-                edge.setLabel(null);
+                growTree(newInstanceList, newFeatureList, childNode);
+                node.addChild(value, childNode);
             }
-            edge.setDepth(depth);
-            decisionTree.add(edge);
         }
-
-        return selectedFeature;
+        decisionTree.addNode(node);
     }
 
     private List<Integer> selectedFeature(Integer indexOfMin, List<Integer> featureList){
         List<Integer> res = new ArrayList<>();
-        for(int i=0; i<featureList.size(); ++i){
-            if(i!=indexOfMin){
+
+        for(int i=0; i<featureList.size(); ++i) {
+            if (i != indexOfMin) {
                 res.add(featureList.get(i));
             }
         }
+        if(this.forestRI != null){
+            if (this.forestRI) {
+                long seed = System.nanoTime();
+                Collections.shuffle(res, new Random(seed));
+                List<Integer> featureListRI = new ArrayList<>();
+                for (int i = 0; i < Math.sqrt(res.size()); ++i) {
+                    featureListRI.add(res.get(i));
+                }
+                return featureListRI;
+            }
+        }
+
         return res;
     }
 
@@ -119,7 +154,7 @@ public class DT {
                 if(instance.getAttriMap().get(selectedFeature) == value ) {
                     Integer label = instance.getLabel();
                     if(!labelMap.containsKey(label)){
-                        labelMap.put(label, 0);
+                        labelMap.put(label, 1);
                     } else {
                         labelMap.put(label, labelMap.get(label) + 1);
                     }
@@ -133,12 +168,11 @@ public class DT {
                 maxLabel = label;
             }
         }
-
         return maxLabel;
     }
 
-    private List<Integer> checkLabelPure(Integer selectedFeature, Integer value, List<Instance> instanceList){
-        List<Integer> res = new ArrayList<>();
+    private Integer[] checkLabelPure(Integer selectedFeature, Integer value, List<Instance> instanceList){
+        Integer[] res = new Integer[2];
         if(instanceList != null) {
             Integer initLabel = 0;
             boolean flag = true;
@@ -149,13 +183,13 @@ public class DT {
                 }
                 else{
                     if(instance.getAttriMap().get(selectedFeature) == value && initLabel != instance.getLabel()) {
-                        res.add(0);
+                        res[0] = 0;
                         return res;
                     }
                 }
             }
-            res.add(1);
-            res.add(initLabel);
+            res[0] = 1;
+            res[1] = initLabel;
             return res;
         } else{
             System.out.println("InstanceList is Null!");
@@ -168,7 +202,7 @@ public class DT {
         for (Instance instance: instanceList) {
             Integer example = instance.getAttriMap().get(feature);
             if(!res.containsKey(example)){
-                res.put(example, 0);
+                res.put(example, 1);
             } else {
                 res.put(example, res.get(example) + 1);
             }
@@ -181,7 +215,7 @@ public class DT {
         for (Instance instance: instanceList) {
             Integer label = instance.getLabel();
             if(!res.containsKey(label)){
-                res.put(label, 0);
+                res.put(label, 1);
             } else {
                 res.put(label, res.get(label) + 1);
             }
@@ -189,34 +223,51 @@ public class DT {
         return res;
     }
 
-    public List<Edge> getDecisionTree() {
-        return decisionTree;
-    }
+
 
     public void initDecisionTree(List<Instance> instanceList) {
-        setRoot(instanceList);
-    }
-
-    public Integer getRoot() {
-        return root;
-    }
-
-    public void setRoot(List<Instance> instanceList) {
-        System.out.println("=====Start building DT=====");
+        this.labelSet = new TreeSet<>(findLabel(instanceList).keySet());
+        this.depth = Integer.MIN_VALUE;
+        if(this.maxDepth == null){
+            maxDepth = Integer.MAX_VALUE;
+        }
         List<Integer> featureList = new ArrayList<>();
         if(instanceList != null){
             featureList = new ArrayList<>(instanceList.get(0).getAttriMap().keySet());
         }
-        this.root = growTree(instanceList, featureList, 1);
-        System.out.println("=====Finish DT=====");
-        System.out.println("=====Printing DT=====");
-        System.out.println("Tree Root = " + root);
-        for(Edge edge : decisionTree){
-            System.out.println("head = " + edge.getHead() + "  tail = " + edge.getTail() + "  edge = " + edge.getEdge() + " label = " + edge.getLabel());
+        Node<Integer> rootNode = new Node<>();
+        rootNode.setDepth(0);
+        growTree(instanceList, featureList, rootNode);
+        decisionTree.setRootNode(rootNode);
+
+//        Stack<Node> stack = new Stack<>();
+//        stack.push(rootNode);
+//        while(!stack.empty()){
+//            Node cur = stack.pop();
+//            Map<Integer, Node> childrenMap = cur.getChildren();
+//            for(Integer edge : childrenMap.keySet()){
+//                stack.push(childrenMap.get(edge));
+//            }
+//        }
+    }
+
+    public Integer checkExample (Instance instance) {
+        if (decisionTree == null) {
+            System.out.println("Please initialize tree first!");
+        } else {
+            Node<Integer> node = decisionTree.getRootNode();
+            while(node.getData() != null){
+                Integer value = instance.getAttriMap().get(node.getData());
+                if(node.getChildren().containsKey(value))
+                    node = node.getChild(value);
+                else {
+                    node = node.getChild(node.getMaxEdge());
+                }
+            }
+
+            return node.getLabel();
         }
-        System.out.println("=====End of DT=====");
-
-
+        return -1;
     }
 
     public Integer getMaxDepth() {
@@ -227,83 +278,16 @@ public class DT {
         this.maxDepth = maxDepth;
     }
 
-    public Boolean checkExample (Instance instance) {
-        if (decisionTree.size() < 1) {
-            System.out.println("Please initialize tree first!");
-        } else if (findLeaf(instance, root) == instance.getLabel()) {
-//            System.out.println("instance = " + instance.getAttriMap() + " label = "+ instance.getLabel());
-
-            return true;
-        }
-//        System.out.println("Wrong instance = " + instance.getAttriMap() + " label = "+ instance.getLabel());
-
-        return false;
+    public TreeSet<Integer> getLabelSet(){
+        return this.labelSet;
     }
 
-    private Integer findLeaf (Instance instance, Integer node){
-
-        for(Edge edge : decisionTree){
-            if(edge.getHead() == node && edge.getEdge() == instance.getAttriMap().get(node)){
-                if(edge.getTail() == null){
-                    return edge.getLabel();
-                } else{
-                    return findLeaf(instance, edge.getTail());
-                }
-            }
-        }
-        return -1;
+    public Integer getDepth() {
+        return depth;
     }
 
-
-    public class Edge{
-
-        private Integer head;
-        // If tail is the leaf of the tree, then set to -1. The edge will be the actual decision
-        private Integer tail;
-        private Integer edge;
-        private Integer depth;
-        private Integer label;
-
-        public Integer getLabel() {
-            return label;
-        }
-
-        public void setLabel(Integer label) {
-            this.label = label;
-        }
-
-
-        public Integer getHead() {
-            return head;
-        }
-
-        public void setHead(Integer head) {
-            this.head = head;
-        }
-
-        public Integer getTail() {
-            return tail;
-        }
-
-        public void setTail(Integer tail) {
-            this.tail = tail;
-        }
-
-        public Integer getEdge() {
-            return edge;
-        }
-
-        public void setEdge(Integer edgeInfo) {
-            this.edge = edgeInfo;
-        }
-
-        public Integer getDepth() {
-            return depth;
-        }
-
-        public void setDepth(Integer depth) {
-            this.depth = depth;
-        }
-
+    public void setForestRI(Boolean forestRI) {
+        this.forestRI = forestRI;
     }
+
 }
